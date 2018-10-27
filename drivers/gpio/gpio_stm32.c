@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2018 Martin Bertsche
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,37 +195,41 @@ static int gpio_stm32_init(struct device *device)
 }
 
 
-#define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
-static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-	.base = (u32_t *)__base_addr,				\
-	.port = __port,							\
-	.pclken = { .bus = __bus, .enr = __cenr }			\
-};									\
-static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-DEVICE_AND_API_INIT(gpio_stm32_## __suffix,				\
-		    __name,						\
-		    gpio_stm32_init,					\
-		    &gpio_stm32_data_## __suffix,			\
-		    &gpio_stm32_cfg_## __suffix,			\
-		    POST_KERNEL,					\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,			\
+#define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus)		\
+static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {			\
+	.base = (u32_t *)__base_addr,							\
+	.port = __port,									\
+	.pclken = { .bus = __bus, .enr = __cenr }					\
+};											\
+static struct gpio_stm32_data gpio_stm32_data_## __suffix;				\
+DEVICE_AND_API_INIT(gpio_stm32_## __suffix,						\
+		    __name,								\
+		    gpio_stm32_init,							\
+		    &gpio_stm32_data_## __suffix,					\
+		    &gpio_stm32_cfg_## __suffix,					\
+		    POST_KERNEL,							\
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,				\
 		    &gpio_stm32_driver);
 
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	/* On STM32F1 series, AFIO should be clocked to access GPIOs */
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
-			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
-			 LL_APB2_GRP1_PERIPH_AFIO |			\
-			 STM32_PERIPH_GPIO##__SUFFIX,			\
-			 STM32_CLOCK_BUS_GPIO)
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
+	GPIO_DEVICE_INIT(CONFIG_GPIO_STM32_GPIO##__SUFFIX##_LABEL,		\
+			 __suffix,						\
+			 CONFIG_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, 	\
+			 STM32_PORT##__SUFFIX,					\
+			 LL_APB2_GRP1_PERIPH_AFIO |				\
+			 CONFIG_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BITS,		\
+			 CONFIG_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BUS)
 #else
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT("GPIO" #__SUFFIX, __suffix,			\
-			 GPIO##__SUFFIX##_BASE, STM32_PORT##__SUFFIX,	\
-			 STM32_PERIPH_GPIO##__SUFFIX,			\
-			 STM32_CLOCK_BUS_GPIO)
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
+        GPIO_DEVICE_INIT(CONFIG_GPIO_STM32_GPIO##__SUFFIX##_LABEL		\
+        		 __suffix,                    				\
+                         CONFIG_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, 	\
+                         STM32_PORT##__SUFFIX,					\
+                         CONFIG_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BITS		\
+                         CONFIG_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BUS)
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 #ifdef CONFIG_GPIO_STM32_PORTA
